@@ -41,7 +41,11 @@ const generateMarkers = (count) => {
   return result;
 };
 
-const markers = generateMarkers(500000);
+// Generate random marker positions
+const markerCount = 500000;
+const markersData = generateMarkers(markerCount);
+
+console.log(`${markerCount} markers created at ${new Date().toUTCString()}`);
 
 console.log(`markers created at ${new Date().toUTCString()}`);
 
