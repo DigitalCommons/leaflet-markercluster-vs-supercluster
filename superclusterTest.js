@@ -125,7 +125,6 @@ function spider(e) {
             map.addLayer(m);
         });
 
-        spiderpoints = points;
         return;
         
         function generatePointsCircle(count, centerPt) {
