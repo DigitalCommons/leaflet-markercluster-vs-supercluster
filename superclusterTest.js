@@ -1,3 +1,5 @@
+import "https://unpkg.com/supercluster@7.1.3/dist/supercluster.min.js"
+
 const map = L.map("map", {
   center: [39.6444, -104.98793],
   zoom: 12,
