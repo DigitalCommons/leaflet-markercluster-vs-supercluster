@@ -1,3 +1,4 @@
+import "https://maxwell-ilai.github.io/Leaflet.SidePanel/dist/leaflet-sidepanel.min.js"
 import "https://unpkg.com/supercluster@7.1.3/dist/supercluster.min.js"
 
 const map = L.map("map", {
@@ -181,6 +182,17 @@ function createClusterIcon(feature, latlng) {
     marker.on('click', spider, {feature, latlng});
     return marker;
 }
+
+
+const panelRight = L.control.sidepanel(
+    'mySidepanelLeft', {
+	panelPosition: 'left',
+	tabsPosition: 'top',
+	pushControls: true,
+	startTab: 'tab-1'
+    });
+
+panelRight.addTo(map);
 
 
 markers.addTo(map);
