@@ -49,8 +49,8 @@ console.log(`${markerCount} markers created at ${new Date().toUTCString()}`);
 
 // Generate GeoJSON points from the positions
 const clusterComponents = markersData.map((asset) => {
-  lng = asset.pos.lng;
-  lat = asset.pos.lat;
+  const lng = asset.pos.lng;
+  const lat = asset.pos.lat;
   return {
     type: "Feature",
     geometry: {
@@ -63,7 +63,7 @@ const clusterComponents = markersData.map((asset) => {
 
 // Create a supercluster instance
 performance.mark("new-supercluster-start")
-index = new Supercluster({
+const index = new Supercluster({
   radius: 60,
   extent: 256,
   maxZoom: 18,
