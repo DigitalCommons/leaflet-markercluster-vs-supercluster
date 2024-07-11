@@ -66,7 +66,7 @@ performance.mark("new-supercluster-start")
 index = new Supercluster({
   radius: 60,
   extent: 256,
-  maxZoom: 17,
+  maxZoom: 18,
 });
 performance.measure("new-supercluster-complete", "new-supercluster-start");
 
