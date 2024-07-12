@@ -1,5 +1,6 @@
 import "https://maxwell-ilai.github.io/Leaflet.SidePanel/dist/leaflet-sidepanel.min.js"
 import "https://unpkg.com/supercluster@7.1.3/dist/supercluster.min.js"
+import van from "https://cdn.jsdelivr.net/gh/vanjs-org/van/public/van-1.5.0.min.js"
 
 const map = L.map("map", {
   center: [39.6444, -104.98793],
@@ -184,6 +185,25 @@ function createClusterIcon(feature, latlng) {
 }
 
 
+function mkDirectory() {
+    const { div, li, ul } = van.tags;
+    const items = ['one','two','three','four'];
+    
+    const Directory = () => 
+	  ul(
+	      {class: 'directory-list'},
+	      items.map(
+		  item => li(
+		      {class:'directory-item'},
+		      item
+		  )
+	      )
+	  );
+    return Directory;
+}
+
+
+
 const panelRight = L.control.sidepanel(
     'mySidepanelLeft', {
 	panelPosition: 'left',
@@ -191,6 +211,9 @@ const panelRight = L.control.sidepanel(
 	pushControls: true,
 	startTab: 'tab-1'
     });
+
+
+van.add(document.getElementById('directory'), mkDirectory());
 
 panelRight.addTo(map);
 
