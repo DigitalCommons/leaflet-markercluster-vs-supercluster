@@ -1,10 +1,11 @@
 import "https://maxwell-ilai.github.io/Leaflet.SidePanel/dist/leaflet-sidepanel.min.js"
 import "https://unpkg.com/supercluster@7.1.3/dist/supercluster.min.js"
 import van from "https://cdn.jsdelivr.net/gh/vanjs-org/van/public/van-1.5.0.min.js"
+import { fetchData } from "./data-fetching.js";
 
 const map = L.map("map", {
   center: [39.6444, -104.98793],
-  zoom: 12,
+  zoom: 3,
   preferCanvas: true,
 });
 
@@ -52,18 +53,36 @@ const markersData = generateMarkers(markerCount);
 console.log(`${markerCount} markers created at ${new Date().toUTCString()}`);
 
 // Generate GeoJSON points from the positions
-const clusterComponents = markersData.map((asset) => {
-  const lng = asset.pos.lng;
-  const lat = asset.pos.lat;
-  return {
-    type: "Feature",
-    geometry: {
-      type: "Point",
-      coordinates: [lng, lat],
-    },
-    properties: {},
-  };
-});
+function data2GeoJson(markersData) {
+  return markersData.map((asset) => {
+	  const lng = asset.pos.lng;
+	  const lat = asset.pos.lat;
+	  return {
+	    type: "Feature",
+	    geometry: {
+		    type: "Point",
+		    coordinates: [lng, lat],
+	    },
+	    properties: {},
+	  };
+  });
+}
+function data2GeoJson2(markersData) {
+  return markersData.map((asset) => {
+	  const [name, lat, lng] = asset;
+	  return {
+	    type: "Feature",
+	    geometry: {
+		    type: "Point",
+		    coordinates: [lng, lat],
+	    },
+	    properties: {
+		    name,
+		    //		cat1, cat2, cat3, cat4
+	    },
+	  };
+  });
+}
 
 // Create a supercluster instance
 performance.mark("new-supercluster-start")
@@ -74,10 +93,6 @@ const index = new Supercluster({
 });
 performance.measure("new-supercluster-complete", "new-supercluster-start");
 
-// Index the clusters
-performance.mark("supercluster-load-start");
-index.load(clusterComponents);
-performance.measure("supercluster-load-complete", "supercluster-load-start");
 
 const markers = L.geoJson(null, {
   pointToLayer: createClusterIcon,
@@ -184,36 +199,52 @@ function createClusterIcon(feature, latlng) {
     return marker;
 }
 
-
-function mkDirectory() {
-    const { div, li, ul } = van.tags;
-    const items = ['one','two','three','four'];
-    
-    const Directory = () => 
-	  ul(
-	      {class: 'directory-list'},
-	      items.map(
-		  item => li(
-		      {class:'directory-item'},
-		      item
-		  )
-	      )
-	  );
-    return Directory;
+function mkDirectory(data) {
+  const { div, li, ul } = van.tags;
+  const items = {};
+  for(const datum of data) {
+	  items[datum[0][5]] = 1;
+  }
+  
+  const Directory = () => 
+	      ul(
+	        {class: 'directory-list'},
+	        Object.keys(items).map(
+		        item => li(
+		          {class:'directory-item'},
+		          item
+		        )
+	        )
+	      );
+  return Directory;
 }
 
 
 
 const panelRight = L.control.sidepanel(
-    'mySidepanelLeft', {
-	panelPosition: 'left',
-	tabsPosition: 'top',
-	pushControls: true,
-	startTab: 'tab-1'
-    });
+  'mySidepanelLeft', {
+	  panelPosition: 'left',
+	  tabsPosition: 'top',
+	  pushControls: true,
+	  startTab: 'tab-1'
+  });
 
 
-van.add(document.getElementById('directory'), mkDirectory());
+const data = './data500k.json';
+fetch(data).then(async (res) => {
+  console.log("done dataload");
+  const data = await res.json();
+  van.add(document.getElementById('directory'), mkDirectory(data));
+  
+  // Index the clusters
+  performance.mark("supercluster-load-start");
+  const clusterComponents = data2GeoJson2(data);
+  console.log("got components");
+  index.load(clusterComponents);
+  performance.measure("supercluster-load-complete", "supercluster-load-start");
+  console.log("got index");
+  reCluster();
+});
 
 panelRight.addTo(map);
 
