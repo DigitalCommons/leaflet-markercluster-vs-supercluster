@@ -63,7 +63,7 @@ function data2GeoJson(markersData) {
 		    type: "Point",
 		    coordinates: [lng, lat],
 	    },
-	    properties: {},
+	    properties: { name: `${lat}, ${lng}` },
 	  };
   });
 }
@@ -192,7 +192,9 @@ function createClusterIcon(feature, latlng) {
     });
     
   }
-  
+  else {
+    opts.title = feature.properties.name;
+  }
   
   
   const marker = L.marker(latlng, opts);
