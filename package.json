@@ -5,8 +5,8 @@
   "type": "module",
   "main": "node-fetch-test.mjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-      
+    "server": "python -m http.server",    
+    "test": "echo \"Error: no test specified\" && exit 1"      
   },
   "author": "",
   "license": "ISC"
