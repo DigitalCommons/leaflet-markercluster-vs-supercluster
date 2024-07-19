@@ -256,26 +256,39 @@ const panelRight = L.control.sidepanel(
   });
 
 
-const data = './points.bin';
-fetch(data).then(async (res) => {
-  console.log("done dataload");
+async function loadLatLngBlock(uri) {
+  console.log(`starting fetch of ${uri} at ${new Date().toUTCString()}`);
+  const res = await fetch(uri)
+  console.log(`fetched ${uri} at ${new Date().toUTCString()}`);
   const blob = await res.blob();
+  console.log(`got blob of size ${blob.size} from ${uri} at ${new Date().toUTCString()}`);
   const data = await blob.arrayBuffer();
+  console.log(`got buffer from ${uri} at ${new Date().toUTCString()}`);
+  return data;
+}
+
+
+async function main() {
+  const data = await loadLatLngBlock('./points.bin');
+  console.log(`points 2 geojson starting at ${new Date().toUTCString()}`);  
+  const clusterComponents = data2GeoJson3(data);
+  console.log(`supercluster indexing at ${new Date().toUTCString()}`);  
   
+  performance.mark("supercluster-load-start");
+  index.load(clusterComponents);
+  performance.measure("supercluster-load-complete", "supercluster-load-start");
+  console.log(`got supercluster index at ${new Date().toUTCString()}`);
+
   //van.add(documWent.getElementById('directory'), mkDirectory(data));
   
   // Index the clusters
-  performance.mark("supercluster-load-start");
-  console.log(`got buffer at ${new Date().toUTCString()}`);  
-  const clusterComponents = data2GeoJson3(data);
-  console.log(`got components at ${new Date().toUTCString()}`);
-  index.load(clusterComponents);
-  performance.measure("supercluster-load-complete", "supercluster-load-start");
-  console.log(`got index at ${new Date().toUTCString()}`);
   console.log(index);
   reCluster();
   console.log(`cluster created at ${new Date().toUTCString()}`);
-});
+}
+
+main();
+
 
 panelRight.addTo(map);
 markers.addTo(map);
