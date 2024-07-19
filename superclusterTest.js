@@ -83,6 +83,29 @@ function data2GeoJson2(markersData) {
 	  };
   });
 }
+function data2GeoJson3(ab) {
+  const dv = new DataView(ab);  
+  const gj = [];
+  for(let ix = 0; ix < 5e5; ix++) {
+    const lat = dv.getFloat32(ix*8);
+    const lng = dv.getFloat32(ix*8+4);
+    gj.push({
+	    type: "Feature",
+	    geometry: {
+		    type: "Point",
+		    coordinates: [lng, lat],
+	    },
+	    properties: {
+		    //name,
+		    //		cat1, cat2, cat3, cat4
+	    },
+	  });
+
+    //console.log(ix, val);
+  }
+  console.log("got ",gj.length," points, ",gj[0]);
+  return gj;
+}
 
 // Create a supercluster instance
 performance.mark("new-supercluster-start")
@@ -233,19 +256,23 @@ const panelRight = L.control.sidepanel(
   });
 
 
-const data = './data500k.json';
+const data = './points.bin';
 fetch(data).then(async (res) => {
   console.log("done dataload");
-  const data = await res.json();
-  van.add(document.getElementById('directory'), mkDirectory(data));
+  const blob = await res.blob();
+  const data = await blob.arrayBuffer();
+  
+  //van.add(documWent.getElementById('directory'), mkDirectory(data));
   
   // Index the clusters
   performance.mark("supercluster-load-start");
-  const clusterComponents = data2GeoJson2(data);
-  console.log("got components");
+  console.log(`got buffer at ${new Date().toUTCString()}`);  
+  const clusterComponents = data2GeoJson3(data);
+  console.log(`got components at ${new Date().toUTCString()}`);
   index.load(clusterComponents);
   performance.measure("supercluster-load-complete", "supercluster-load-start");
-  console.log("got index");
+  console.log(`got index at ${new Date().toUTCString()}`);
+  console.log(index);
   reCluster();
   console.log(`cluster created at ${new Date().toUTCString()}`);
 });
