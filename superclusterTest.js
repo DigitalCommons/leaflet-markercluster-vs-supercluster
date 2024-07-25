@@ -1,5 +1,4 @@
 import "https://maxwell-ilai.github.io/Leaflet.SidePanel/dist/leaflet-sidepanel.min.js"
-import "https://unpkg.com/supercluster@7.1.3/dist/supercluster.min.js"
 import van from "https://cdn.jsdelivr.net/gh/vanjs-org/van/public/van-1.5.0.min.js"
 import { fetchData } from "./data-fetching.js";
 
@@ -52,79 +51,20 @@ const markersData = generateMarkers(markerCount);
 
 console.log(`${markerCount} markers created at ${new Date().toUTCString()}`);
 
-// Generate GeoJSON points from the positions
-function data2GeoJson(markersData) {
-  return markersData.map((asset) => {
-	  const lng = asset.pos.lng;
-	  const lat = asset.pos.lat;
-	  return {
-	    type: "Feature",
-	    geometry: {
-		    type: "Point",
-		    coordinates: [lng, lat],
-	    },
-	    properties: { name: `${lat}, ${lng}` },
-	  };
-  });
-}
-function data2GeoJson2(markersData) {
-  return markersData.map((asset) => {
-	  const [name, lat, lng] = asset;
-	  return {
-	    type: "Feature",
-	    geometry: {
-		    type: "Point",
-		    coordinates: [lng, lat],
-	    },
-	    properties: {
-		    name,
-		    //		cat1, cat2, cat3, cat4
-	    },
-	  };
-  });
-}
-function data2GeoJson3(ab) {
-  const dv = new DataView(ab);  
-  const gj = [];
-  for(let ix = 0; ix < 5e5; ix++) {
-    const lat = dv.getFloat32(ix*8);
-    const lng = dv.getFloat32(ix*8+4);
-    gj.push({
-	    type: "Feature",
-	    geometry: {
-		    type: "Point",
-		    coordinates: [lng, lat],
-	    },
-	    properties: {
-		    //name,
-		    //		cat1, cat2, cat3, cat4
-	    },
-	  });
 
-    //console.log(ix, val);
-  }
-  console.log("got ",gj.length," points, ",gj[0]);
-  return gj;
-}
-
-// Create a supercluster instance
-performance.mark("new-supercluster-start")
-const index = new Supercluster({
-  radius: 60,
-  extent: 256,
-  maxZoom: 18,
-});
-performance.measure("new-supercluster-complete", "new-supercluster-start");
 
 
 const markers = L.geoJson(null, {
   pointToLayer: createClusterIcon,
 });
 
+//import('./superclusterTest.worker.js');
+const worker = new Worker('superclusterTest.worker.js');
+worker.onerror = (error) => console.log("worker error:", error);
+
 // Callback to get the clusters on pan and zoom
-function reCluster(e) {
-  console.log("reclustering", e);
-  performance.mark("supercluster-recluster-start")
+function reCluster() {
+  console.log("reCluster");
   const zoom = map.getZoom();
   const bounds = map.getBounds();
   const bbox = [
@@ -133,13 +73,13 @@ function reCluster(e) {
     bounds.getEast(),
     bounds.getNorth(),
   ];
-  
-  const clusters = index.getClusters(bbox, zoom);
-  
+  worker.postMessage({subtype: 'recluster', data: {bbox, zoom}});
+}
+
+function onReCluster(clusters) {
+  console.log("onReCluster",clusters.length);
   markers.clearLayers();
   markers.addData(clusters);
-  performance.measure("supercluster-recluster-complete", "supercluster-recluster-start");
-  
 }
 
 map.on('zoomend viewreset load moveend zoomlevelschange ', reCluster);
@@ -254,37 +194,32 @@ const panelRight = L.control.sidepanel(
 	  pushControls: true,
 	  startTab: 'tab-1'
   });
-
-
-async function loadLatLngBlock(uri) {
-  console.log(`starting fetch of ${uri} at ${new Date().toUTCString()}`);
-  const res = await fetch(uri)
-  console.log(`fetched ${uri} at ${new Date().toUTCString()}`);
-  const blob = await res.blob();
-  console.log(`got blob of size ${blob.size} from ${uri} at ${new Date().toUTCString()}`);
-  const data = await blob.arrayBuffer();
-  console.log(`got buffer from ${uri} at ${new Date().toUTCString()}`);
-  return data;
-}
-
-
-async function main() {
-  const data = await loadLatLngBlock('./points.bin');
-  console.log(`points 2 geojson starting at ${new Date().toUTCString()}`);  
-  const clusterComponents = data2GeoJson3(data);
-  console.log(`supercluster indexing at ${new Date().toUTCString()}`);  
   
-  performance.mark("supercluster-load-start");
-  index.load(clusterComponents);
-  performance.measure("supercluster-load-complete", "supercluster-load-start");
-  console.log(`got supercluster index at ${new Date().toUTCString()}`);
+  
+  
+async function main() {
 
   //van.add(documWent.getElementById('directory'), mkDirectory(data));
   
-  // Index the clusters
-  console.log(index);
-  reCluster();
-  console.log(`cluster created at ${new Date().toUTCString()}`);
+}
+worker.onmessage = (event) => {
+  const {subtype, data} = event.data;
+  //console.log(">>",event);
+
+  switch(subtype) {
+  case 'indexComplete':
+    reCluster();
+    break;
+    
+  case 'recluster':
+    onReCluster(data);
+    break;
+  case 'log':
+    console.log(data);
+    break;
+  default:
+    console.log("eh?", event);
+  }
 }
 
 main();
@@ -292,4 +227,4 @@ main();
 
 panelRight.addTo(map);
 markers.addTo(map);
-
+console.log("done");
